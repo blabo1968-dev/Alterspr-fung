@@ -2,60 +2,186 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>AltersCheck Kiosk – Finale Profi-Version</title>
+<title>AltersCheck Kiosk – Mobile Perfekt-Version</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-  * { box-sizing:border-box; }
-  html { width:100%; min-height:100%; }
-  body { background:#000; color:#fff; font-family:Arial,sans-serif; margin:0; padding:clamp(8px, 2.5vw, 12px); text-align:center; width:100%; min-height:100vh; overflow-x:hidden; }
-  h1 { color:#ff4444; margin:4px auto; font-size:clamp(15px, 4.2vw, 22px); line-height:1.25; max-width:900px; overflow-wrap:anywhere; }
-  h2 { color:#ffcc00; margin:6px 0; font-size:clamp(21px, 5vw, 24px); }
-  .video-wrapper { position:relative; width:100%; max-width:520px; margin:8px auto; }
-  #video { width:100%; height:auto; border:2px solid #333; border-radius:10px; display:block; }
-  .scan-frame { position:absolute; left:50%; top:50%; width:70%; height:28%; transform:translate(-50%,-50%); border:3px dashed #ffcc00; border-radius:8px; pointer-events:none; }
-  .scan-beam { display:none; position:absolute; top:0; bottom:0; left:0; width:2px; pointer-events:none; z-index:2; opacity:.55; background:linear-gradient(to bottom, transparent, #bfeaff 18%, #ffffff 50%, #bfeaff 82%, transparent); box-shadow:0 0 5px rgba(190,234,255,.55); }
-  .video-wrapper.scanning .scan-beam { display:block; animation:scanSweep 1.6s ease-in-out infinite alternate; }
-  @keyframes scanSweep { from { left:1%; } to { left:99%; } }
-  .button-row { width:100%; max-width:520px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:6px; }
-  
-  /* Nur Button-Größen angepasst */
-  button { cursor:pointer; color:#fff; border:none; border-radius:8px; font-weight:bold; margin:6px 3px; max-width:100%; }
-  button:disabled { opacity:.55; cursor:wait; }
-  
-  #manualBtn { justify-self:stretch; background:#444; padding:8px 6px; font-size:13px; }
-  #scanBtn { justify-self:center; background:#007bff; padding:16px 36px; font-size:22px; }
-  #clearBtn { justify-self:stretch; background:#b22222; padding:8px 6px; font-size:13px; }
+  * { box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    background: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-  #age { font-size:clamp(30px, 8vw, 40px); font-weight:bold; margin:10px 4px; overflow-wrap:anywhere; }
-  .green { color:#00ff00; } .yellow { color:#ffff00; } .red { color:#ff0000; }
-  #date { font-size:clamp(14px, 3.8vw, 16px); color:#ccc; margin-bottom:6px; }
-  #status { font-size:clamp(12px, 3.4vw, 13px); color:#aaa; margin:0 auto 10px; max-width:650px; overflow-wrap:anywhere; }
-  
-  .info { font-size:12px; color:#ccc; margin-top:14px; text-align:left; background:#222; padding:10px; border-radius:5px; width:100%; max-width:520px; margin:14px auto 0; overflow-wrap:anywhere; }
-  
-  @media (max-width: 600px) {
-    html, body { height:100%; min-height:0; }
-    body {
-      height:100vh; height:100dvh; min-height:0; overflow:hidden; padding:4px 8px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    }
-    h1 { flex:0 0 auto; font-size:clamp(13px, 3.7vw, 17px); line-height:1.12; margin:2px auto; }
-    h2 { flex:0 0 auto; font-size:clamp(19px, 5vw, 22px); line-height:1.1; margin:3px 0; }
-    .video-wrapper {
-      flex:0 1 auto; width:100%; max-width:520px; height:clamp(125px, 27dvh, 215px); margin:4px auto;
-    }
-    #video { width:100%; height:100%; object-fit:cover; }
-    .scan-frame { border-width:2px; border-radius:6px; }
-    #age { flex:0 0 auto; font-size:clamp(27px, 7.5vw, 36px); line-height:1.05; margin:3px 2px; }
-    #date { flex:0 0 auto; font-size:13px; line-height:1.15; margin:2px 0; }
-    #status { flex:0 0 auto; font-size:11px; line-height:1.15; margin:2px auto 3px; }
-    
-    .button-row { flex:0 0 auto; gap:4px; }
-    #manualBtn { padding:6px 2px; font-size:11px; }
-    #scanBtn { padding:12px 20px; font-size:18px; }
-    #clearBtn { padding:6px 2px; font-size:11px; }
-    
-    .info { flex:0 0 auto; font-size:10px; line-height:1.2; padding:6px 8px; margin:4px auto 0; }
+  body {
+    padding: clamp(6px, 1.5vh, 12px);
+  }
+
+  h1 {
+    color: #ff4444;
+    margin: 2px 0;
+    font-size: clamp(12px, 3.2vw, 18px);
+    line-height: 1.2;
+    max-width: 900px;
+  }
+
+  h2 {
+    color: #ffcc00;
+    margin: 2px 0;
+    font-size: clamp(16px, 4.5vw, 22px);
+    line-height: 1.1;
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    flex: 0 1 auto;
+    max-height: 32vh;
+    margin: 2px auto;
+    border: 2px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .scan-frame {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 72%;
+    height: 32%;
+    transform: translate(-50%, -50%);
+    border: 3px dashed #ffcc00;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .scan-beam {
+    display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    pointer-events: none;
+    z-index: 4;
+    opacity: .55;
+    background: linear-gradient(to bottom, transparent, #bfeaff 18%, #ffffff 50%, #bfeaff 82%, transparent);
+    box-shadow: 0 0 5px rgba(190,234,255,.55);
+  }
+
+  .video-wrapper.scanning .scan-beam {
+    display: block;
+    animation: scanSweep 1.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes scanSweep {
+    from { left: 1%; }
+    to { left: 99%; }
+  }
+
+  #age {
+    font-size: clamp(26px, 7vw, 38px);
+    font-weight: bold;
+    margin: 2px 0;
+    line-height: 1.1;
+  }
+
+  .green { color: #00ff00; }
+  .yellow { color: #ffff00; }
+  .red { color: #ff0000; }
+
+  #date {
+    font-size: clamp(12px, 3.2vw, 15px);
+    color: #ccc;
+    margin-bottom: 2px;
+  }
+
+  #status {
+    font-size: clamp(11px, 3vw, 13px);
+    color: #aaa;
+    margin: 0 auto 4px;
+    max-width: 600px;
+  }
+
+  .button-row {
+    width: 100%;
+    max-width: 480px;
+    margin: 2px auto;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+    align-items: center;
+    gap: 6px;
+  }
+
+  button {
+    cursor: pointer;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    max-width: 100%;
+  }
+
+  button:disabled {
+    opacity: .55;
+    cursor: wait;
+  }
+
+  #manualBtn {
+    justify-self: stretch;
+    background: #444;
+    padding: 10px 6px;
+    font-size: clamp(12px, 3.2vw, 14px);
+  }
+
+  #scanBtn {
+    justify-self: center;
+    background: #007bff;
+    padding: 12px 28px;
+    font-size: clamp(18px, 5vw, 22px);
+  }
+
+  #clearBtn {
+    justify-self: stretch;
+    background: #b22222;
+    padding: 10px 6px;
+    font-size: clamp(12px, 3.2vw, 14px);
+  }
+
+  .info {
+    font-size: clamp(9px, 2.5vw, 11px);
+    color: #aaa;
+    text-align: left;
+    background: #181818;
+    padding: 6px 10px;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 480px;
+    margin: 2px auto;
+    line-height: 1.2;
   }
 </style>
 </head>
@@ -72,6 +198,7 @@
 <div id="age">---</div>
 <div id="date">Bitte Dokument im Rahmen positionieren</div>
 <div id="status">Status: Kamera wird vorbereitet …</div>
+
 <div class="button-row">
   <button id="manualBtn" type="button">Manuell</button>
   <button id="scanBtn" type="button" disabled>SCAN</button>
@@ -80,9 +207,8 @@
 
 <div class="info">
   <strong>Impressum:</strong> Blankenhagen Spieleentwicklung, Kanalstraße 31, 73614 Schorndorf.<br>
-  <strong>E-Mail:</strong> spieleentwicklung@freenet.de<br>
-  <strong>Datenschutz:</strong> Lokale Bildverarbeitung, keine Speicherung. Die Texterkennungsbibliothek wird aus dem Internet geladen.<br>
-  <strong>Hinweis:</strong> Finale Entscheidung obliegt dem Personal. Erkannte Daten bitte immer mit dem Original vergleichen.
+  <strong>Datenschutz:</strong> Lokale Bildverarbeitung, keine Speicherung.<br>
+  <strong>Hinweis:</strong> Finale Entscheidung obliegt dem Personal. Daten mit Original vergleichen.
 </div>
 
 <script>
@@ -114,7 +240,7 @@
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setStatus('Kamerazugriff nicht verfügbar. Seite über HTTPS oder localhost öffnen; alternativ manuell eingeben.');
+      setStatus('Kamerazugriff nicht verfügbar. Seite über HTTPS öffnen.');
       return;
     }
 
@@ -142,20 +268,20 @@
       video.srcObject = null;
       scanBtn.disabled = true;
       const message = err && err.name === 'NotAllowedError'
-        ? 'Kamerazugriff verweigert. Bitte die Kameraberechtigung in den Browser-Einstellungen erlauben.'
+        ? 'Kamerazugriff verweigert.'
         : err && err.name === 'NotFoundError'
           ? 'Keine Kamera gefunden.'
           : (err && err.message ? err.message : 'Kamera konnte nicht gestartet werden.');
-      setStatus(message + ' Manuelle Eingabe ist weiterhin möglich.');
+      setStatus(message + ' Manuelle Eingabe möglich.');
     }
   }
 
   function captureFrame() {
     if (!stream || !stream.getVideoTracks().some(t => t.readyState === 'live')) {
-      throw new Error('Kamera ist nicht aktiv. Bitte die Seite in einem Browser mit Kamerazugriff öffnen.');
+      throw new Error('Kamera ist nicht aktiv.');
     }
     if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-      throw new Error('Noch kein Kamerabild verfügbar. Bitte kurz warten und erneut scannen.');
+      throw new Error('Noch kein Kamerabild verfügbar.');
     }
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
@@ -232,13 +358,13 @@
       ageEl.textContent = '---';
       ageEl.className = 'red';
       dateEl.textContent = 'Kein gültiges Datum erkannt';
-      setStatus('Bitte erneut scannen oder das Datum manuell eingeben.');
+      setStatus('Bitte erneut scannen oder manuell eingeben.');
       return;
     }
     dateEl.textContent = `${prefix}: ${String(parsed.d).padStart(2,'0')}.${String(parsed.m).padStart(2,'0')}.${parsed.y}`;
     ageEl.textContent = `${parsed.age} Jahre`;
     ageEl.className = parsed.age >= 18 ? 'green' : (parsed.age >= 16 ? 'yellow' : 'red');
-    setStatus('Ergebnis bitte mit dem Originaldokument vergleichen');
+    setStatus('Ergebnis prüfen');
   }
 
   function findDate(text) {
@@ -253,7 +379,7 @@
 
   async function performOCR(canvas) {
     preprocessCanvas(canvas);
-    if (!window.Tesseract) throw new Error('Texterkennung nicht geladen. Internetverbindung prüfen oder Datum manuell eingeben.');
+    if (!window.Tesseract) throw new Error('Texterkennung nicht geladen.');
     const { data: { text } } = await Tesseract.recognize(canvas, 'deu', {
       tessedit_char_whitelist: '0123456789./- ',
       preserve_interword_spaces: '1'
@@ -274,7 +400,7 @@
       const parsed = await performOCR(cropped);
       displayResult(parsed);
     } catch (err) {
-      setStatus((err && err.message ? err.message : 'Scan fehlgeschlagen') + ' Manuelle Eingabe möglich.');
+      setStatus((err && err.message ? err.message : 'Scan fehlgeschlagen') + ' Manuell möglich.');
     } finally {
       busy = false;
       scanning = false;
@@ -290,9 +416,7 @@
     dateEl.textContent = 'Bitte Dokument im Rahmen positionieren';
     const cameraReady = stream && stream.getVideoTracks().some(t => t.readyState === 'live');
     scanBtn.disabled = !cameraReady;
-    setStatus(cameraReady
-      ? 'Ergebnis gelöscht – bereit für den nächsten Scan'
-      : 'Ergebnis gelöscht – Kamera nicht bereit; manuelle Eingabe möglich');
+    setStatus(cameraReady ? 'Bereit für nächsten Scan' : 'Kamera nicht bereit');
   }
 
   function manualEntry() {
@@ -306,7 +430,7 @@
       else if (digits.length === 6) match = [digits, digits.slice(0,2), digits.slice(2,4), digits.slice(4)];
     }
     if (!match) {
-      setStatus('Format nicht erkannt. Bitte TT.MM.JJJJ eingeben.');
+      setStatus('Format nicht erkannt (TT.MM.JJJJ).');
       return;
     }
     displayResult(parseDate(match[1], match[2], match[3]), 'Manuell');
