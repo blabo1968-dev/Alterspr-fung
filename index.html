@@ -2,186 +2,65 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>AltersCheck Kiosk – Mobile Perfekt-Version</title>
+<title>AltersCheck Kiosk – Turbo-Version</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   html, body {
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    margin: 0;
-    padding: 0;
-    background: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    width: 100%; height: 100%; height: 100dvh;
+    margin: 0; padding: 0; background: #000; color: #fff;
+    font-family: Arial, sans-serif; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
   }
-
-  body {
-    padding: clamp(6px, 1.5vh, 12px);
-  }
-
-  h1 {
-    color: #ff4444;
-    margin: 2px 0;
-    font-size: clamp(12px, 3.2vw, 18px);
-    line-height: 1.2;
-    max-width: 900px;
-  }
-
-  h2 {
-    color: #ffcc00;
-    margin: 2px 0;
-    font-size: clamp(16px, 4.5vw, 22px);
-    line-height: 1.1;
-  }
-
+  body { padding: clamp(6px, 1.5vh, 12px); }
+  h1 { color: #ff4444; margin: 2px 0; font-size: clamp(12px, 3.2vw, 18px); line-height: 1.2; }
+  h2 { color: #ffcc00; margin: 2px 0; font-size: clamp(16px, 4.5vw, 22px); }
+  
   .video-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 480px;
-    flex: 0 1 auto;
-    max-height: 32vh;
-    margin: 2px auto;
-    border: 2px solid #333;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #111;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; width: 100%; max-width: 480px; flex: 0 1 auto;
+    max-height: 32vh; margin: 2px auto; border: 2px solid #333;
+    border-radius: 10px; overflow: hidden; background: #111;
+    display: flex; align-items: center; justify-content: center;
   }
-
-  #video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
+  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  
   .scan-frame {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 72%;
-    height: 32%;
-    transform: translate(-50%, -50%);
-    border: 3px dashed #ffcc00;
-    border-radius: 8px;
-    pointer-events: none;
-    z-index: 3;
+    position: absolute; left: 50%; top: 50%; width: 72%; height: 32%;
+    transform: translate(-50%, -50%); border: 3px dashed #ffcc00;
+    border-radius: 8px; pointer-events: none; z-index: 3;
   }
-
   .scan-beam {
-    display: none;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 2px;
-    pointer-events: none;
-    z-index: 4;
-    opacity: .55;
+    display: none; position: absolute; top: 0; bottom: 0; left: 0; width: 2px;
+    pointer-events: none; z-index: 4; opacity: .55;
     background: linear-gradient(to bottom, transparent, #bfeaff 18%, #ffffff 50%, #bfeaff 82%, transparent);
     box-shadow: 0 0 5px rgba(190,234,255,.55);
   }
-
   .video-wrapper.scanning .scan-beam {
-    display: block;
-    animation: scanSweep 1.6s ease-in-out infinite alternate;
+    display: block; animation: scanSweep 1.2s ease-in-out infinite alternate;
   }
+  @keyframes scanSweep { from { left: 1%; } to { left: 99%; } }
 
-  @keyframes scanSweep {
-    from { left: 1%; }
-    to { left: 99%; }
-  }
-
-  #age {
-    font-size: clamp(26px, 7vw, 38px);
-    font-weight: bold;
-    margin: 2px 0;
-    line-height: 1.1;
-  }
-
-  .green { color: #00ff00; }
-  .yellow { color: #ffff00; }
-  .red { color: #ff0000; }
-
-  #date {
-    font-size: clamp(12px, 3.2vw, 15px);
-    color: #ccc;
-    margin-bottom: 2px;
-  }
-
-  #status {
-    font-size: clamp(11px, 3vw, 13px);
-    color: #aaa;
-    margin: 0 auto 4px;
-    max-width: 600px;
-  }
+  #age { font-size: clamp(26px, 7vw, 38px); font-weight: bold; margin: 2px 0; line-height: 1.1; }
+  .green { color: #00ff00; } .yellow { color: #ffff00; } .red { color: #ff0000; }
+  #date { font-size: clamp(12px, 3.2vw, 15px); color: #ccc; margin-bottom: 2px; }
+  #status { font-size: clamp(11px, 3vw, 13px); color: #aaa; margin: 0 auto 4px; max-width: 600px; }
 
   .button-row {
-    width: 100%;
-    max-width: 480px;
-    margin: 2px auto;
-    display: grid;
-    grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
-    align-items: center;
-    gap: 6px;
+    width: 100%; max-width: 480px; margin: 2px auto;
+    display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 6px;
   }
+  button { cursor: pointer; color: #fff; border: none; border-radius: 8px; font-weight: bold; max-width: 100%; }
+  button:disabled { opacity: .55; cursor: wait; }
 
-  button {
-    cursor: pointer;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    max-width: 100%;
-  }
-
-  button:disabled {
-    opacity: .55;
-    cursor: wait;
-  }
-
-  #manualBtn {
-    justify-self: stretch;
-    background: #444;
-    padding: 10px 6px;
-    font-size: clamp(12px, 3.2vw, 14px);
-  }
-
-  #scanBtn {
-    justify-self: center;
-    background: #007bff;
-    padding: 12px 28px;
-    font-size: clamp(18px, 5vw, 22px);
-  }
-
-  #clearBtn {
-    justify-self: stretch;
-    background: #b22222;
-    padding: 10px 6px;
-    font-size: clamp(12px, 3.2vw, 14px);
-  }
+  #manualBtn { justify-self: stretch; background: #444; padding: 10px 6px; font-size: clamp(12px, 3.2vw, 14px); }
+  #scanBtn { justify-self: center; background: #007bff; padding: 12px 28px; font-size: clamp(18px, 5vw, 22px); }
+  #clearBtn { justify-self: stretch; background: #b22222; padding: 10px 6px; font-size: clamp(12px, 3.2vw, 14px); }
 
   .info {
-    font-size: clamp(9px, 2.5vw, 11px);
-    color: #aaa;
-    text-align: left;
-    background: #181818;
-    padding: 6px 10px;
-    border-radius: 6px;
-    width: 100%;
-    max-width: 480px;
-    margin: 2px auto;
-    line-height: 1.2;
+    font-size: clamp(9px, 2.5vw, 11px); color: #aaa; text-align: left;
+    background: #181818; padding: 6px 10px; border-radius: 6px;
+    width: 100%; max-width: 480px; margin: 2px auto; line-height: 1.2;
   }
 </style>
 </head>
@@ -197,7 +76,7 @@
 
 <div id="age">---</div>
 <div id="date">Bitte Dokument im Rahmen positionieren</div>
-<div id="status">Status: Kamera wird vorbereitet …</div>
+<div id="status">Status: Initialisiere System …</div>
 
 <div class="button-row">
   <button id="manualBtn" type="button">Manuell</button>
@@ -208,7 +87,7 @@
 <div class="info">
   <strong>Impressum:</strong> Blankenhagen Spieleentwicklung, Kanalstraße 31, 73614 Schorndorf.<br>
   <strong>Datenschutz:</strong> Lokale Bildverarbeitung, keine Speicherung.<br>
-  <strong>Hinweis:</strong> Finale Entscheidung obliegt dem Personal. Daten mit Original vergleichen.
+  <strong>Hinweis:</strong> Finale Entscheidung obliegt dem Personal.
 </div>
 
 <script>
@@ -225,63 +104,49 @@
 
   let stream = null;
   let busy = false;
-  let scanning = false;
+  let ocrWorker = null;
 
   function setStatus(text) { statusEl.textContent = 'Status: ' + text; }
 
-  async function startCamera() {
-    if (stream && stream.getVideoTracks().some(t => t.readyState === 'live')) {
-      try {
-        await video.play();
-        scanBtn.disabled = false;
-        setStatus('Kamera bereit');
-        return;
-      } catch (_) {}
+  // 1. OCR-Worker im Hintergrund vorab laden (beschleunigt den Scan extrem!)
+  async function initOCR() {
+    try {
+      setStatus('Lade Texterkennungs-Modul …');
+      ocrWorker = await Tesseract.createWorker('deu');
+      await ocrWorker.setParameters({
+        tessedit_char_whitelist: '0123456789./- ',
+        preserve_interword_spaces: '1'
+      });
+      setStatus('Modul bereit – starte Kamera …');
+      startCamera();
+    } catch (err) {
+      setStatus('Fehler beim Laden des OCR-Moduls.');
     }
+  }
 
+  async function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setStatus('Kamerazugriff nicht verfügbar. Seite über HTTPS öffnen.');
+      setStatus('Kamerazugriff nicht verfügbar.');
       return;
     }
-
-    setStatus('Kameraberechtigung wird angefordert …');
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
       video.srcObject = stream;
-      await new Promise((resolve, reject) => {
-        if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
-        const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Warten auf das Kamerabild.')), 10000);
-        video.onloadedmetadata = () => {
-          clearTimeout(timer);
-          video.play().then(resolve).catch(reject);
-        };
-      });
       await video.play();
       scanBtn.disabled = false;
-      setStatus('Kamera bereit – Geburtsdatum in den Rahmen legen');
+      setStatus('Kamera bereit – Ausweis in den Rahmen legen');
     } catch (err) {
-      if (stream) stream.getTracks().forEach(track => track.stop());
-      stream = null;
-      video.srcObject = null;
       scanBtn.disabled = true;
-      const message = err && err.name === 'NotAllowedError'
-        ? 'Kamerazugriff verweigert.'
-        : err && err.name === 'NotFoundError'
-          ? 'Keine Kamera gefunden.'
-          : (err && err.message ? err.message : 'Kamera konnte nicht gestartet werden.');
-      setStatus(message + ' Manuelle Eingabe möglich.');
+      setStatus('Kamera verweigert. Manuelle Eingabe nutzen.');
     }
   }
 
   function captureFrame() {
     if (!stream || !stream.getVideoTracks().some(t => t.readyState === 'live')) {
       throw new Error('Kamera ist nicht aktiv.');
-    }
-    if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-      throw new Error('Noch kein Kamerabild verfügbar.');
     }
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
@@ -357,8 +222,8 @@
     if (!parsed) {
       ageEl.textContent = '---';
       ageEl.className = 'red';
-      dateEl.textContent = 'Kein gültiges Datum erkannt';
-      setStatus('Bitte erneut scannen oder manuell eingeben.');
+      dateEl.textContent = 'Kein Datum erkannt';
+      setStatus('Erneut versuchen oder manuell eingeben.');
       return;
     }
     dateEl.textContent = `${prefix}: ${String(parsed.d).padStart(2,'0')}.${String(parsed.m).padStart(2,'0')}.${parsed.y}`;
@@ -377,33 +242,24 @@
     return null;
   }
 
-  async function performOCR(canvas) {
-    preprocessCanvas(canvas);
-    if (!window.Tesseract) throw new Error('Texterkennung nicht geladen.');
-    const { data: { text } } = await Tesseract.recognize(canvas, 'deu', {
-      tessedit_char_whitelist: '0123456789./- ',
-      preserve_interword_spaces: '1'
-    });
-    return findDate(text);
-  }
-
   async function scan() {
-    if (busy) return;
+    if (busy || !ocrWorker) return;
     busy = true;
-    scanning = true;
     videoWrapper.classList.add('scanning');
     scanBtn.disabled = true;
     try {
-      setStatus('Bild wird aufgenommen …');
+      setStatus('Analysiere Ausschnitt …');
       const cropped = cropFrame(captureFrame());
-      setStatus('Geburtsdatum wird gelesen …');
-      const parsed = await performOCR(cropped);
+      preprocessCanvas(cropped);
+      
+      // Nutzung des bereits geladenen Workers (blitzschnell im Vergleich zu vorher)
+      const { data: { text } } = await ocrWorker.recognize(cropped);
+      const parsed = findDate(text);
       displayResult(parsed);
     } catch (err) {
-      setStatus((err && err.message ? err.message : 'Scan fehlgeschlagen') + ' Manuell möglich.');
+      setStatus('Scan fehlgeschlagen. Manuell möglich.');
     } finally {
       busy = false;
-      scanning = false;
       videoWrapper.classList.remove('scanning');
       scanBtn.disabled = !(stream && stream.getVideoTracks().some(t => t.readyState === 'live'));
     }
@@ -440,8 +296,8 @@
   manualBtn.addEventListener('click', manualEntry);
   clearBtn.addEventListener('click', clearResult);
 
-  if (document.readyState === 'complete') startCamera();
-  else window.addEventListener('load', startCamera, { once: true });
+  // Startet den Initialisierungs-Prozess
+  initOCR();
 })();
 </script>
 </body>
