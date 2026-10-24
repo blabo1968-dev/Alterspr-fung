@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>AltersCheck Kiosk – Finale Profi-Version</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  * { box-sizing:border-box; }
+  html { width:100%; min-height:100%; }
+  body { background:#000; color:#fff; font-family:Arial,sans-serif; margin:0; padding:clamp(8px, 2.5vw, 12px); text-align:center; width:100%; min-height:100vh; overflow-x:hidden; }
+  h1 { color:#ff4444; margin:4px auto; font-size:clamp(15px, 4.2vw, 22px); line-height:1.25; max-width:900px; overflow-wrap:anywhere; }
+  h2 { color:#ffcc00; margin:6px 0; font-size:clamp(21px, 5vw, 24px); }
+  .video-wrapper { position:relative; width:100%; max-width:520px; margin:8px auto; }
+  #video { width:100%; height:auto; border:2px solid #333; border-radius:10px; display:block; }
+  .scan-frame { position:absolute; left:50%; top:50%; width:70%; height:28%; transform:translate(-50%,-50%); border:3px dashed #ffcc00; border-radius:8px; pointer-events:none; }
+  #age { font-size:clamp(30px, 8vw, 40px); font-weight:bold; margin:10px 4px; overflow-wrap:anywhere; }
+  .green { color:#00ff00; } .yellow { color:#ffff00; } .red { color:#ff0000; }
+  #date { font-size:clamp(14px, 3.8vw, 16px); color:#ccc; margin-bottom:6px; }
+  #status { font-size:clamp(12px, 3.4vw, 13px); color:#aaa; margin:0 auto 10px; max-width:650px; overflow-wrap:anywhere; }
+  button { padding:12px clamp(18px, 7vw, 36px); font-size:clamp(16px, 4.5vw, 18px); cursor:pointer; background:#007bff; color:#fff; border:none; border-radius:8px; font-weight:bold; margin:6px 3px; max-width:100%; }
+  button:disabled { opacity:.55; cursor:wait; }
+  #manualBtn { background:#444; }
+  .info { font-size:12px; color:#ccc; margin-top:14px; text-align:left; background:#222; padding:10px; border-radius:5px; width:100%; max-width:520px; margin:14px auto 0; overflow-wrap:anywhere; }
+  @media (max-width: 480px) {
+    body { padding:8px; }
+    .video-wrapper { margin:8px auto; }
+    .scan-frame { border-width:2px; border-radius:6px; }
+    button { padding:12px 18px; }
+    .info { font-size:11px; padding:9px; }
+  }
+  @media (max-width: 350px) {
+    h1 { font-size:14px; }
+    button { width:100%; margin:5px 0; }
+  }
+</style>
+</head>
+<body>
+<h1>ENTWICKLUNGSPROGRAMM – Blankenhagen Spieleentwicklung</h1>
+<h2>AltersCheck Kiosk</h2>
+
+<div class="video-wrapper">
+  <video id="video" autoplay playsinline muted></video>
+  <div id="frame" class="scan-frame"></div>
+</div>
+
+<div id="age">---</div>
+<div id="date">Bitte Dokument im Rahmen positionieren</div>
+<div id="status">Status: Kamera wird vorbereitet …</div>
+<button id="scanBtn" disabled>SCAN</button>
+<button id="manualBtn">Manuell eingeben</button>
+
+<div class="info">
+  <strong>Impressum:</strong> Blankenhagen Spieleentwicklung, Kanalstraße 31, 73614 Schorndorf.<br>
+  <strong>E-Mail:</strong> spieleentwicklung@freenet.de<br>
+  <strong>Datenschutz:</strong> Lokale Bildverarbeitung, keine Speicherung. Die Texterkennungsbibliothek wird aus dem Internet geladen.<br>
+  <strong>Hinweis:</strong> Finale Entscheidung obliegt dem Personal. Erkannte Daten bitte immer mit dem Original vergleichen.
+</div>
+
+<script>
+(() => {
+  const video = document.getElementById('video');
+  const frameEl = document.getElementById('frame');
+  const scanBtn = document.getElementById('scanBtn');
+  const manualBtn = document.getElementById('manualBtn');
+  const ageEl = document.getElementById('age');
+  const dateEl = document.getElementById('date');
+  const statusEl = document.getElementById('status');
+
+  let stream = null;
+  let busy = false;
+  let scanning = false;
+
+  function setStatus(text) { statusEl.textContent = 'Status: ' + text; }
+
+  async function startCamera() {
+    if (stream && stream.getVideoTracks().some(t => t.readyState === 'live')) {
+      try {
+        await video.play();
+        scanBtn.disabled = false;
+        setStatus('Kamera bereit');
+        return;
+      } catch (_) {}
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus('Kamerazugriff nicht verfügbar. Seite über HTTPS oder localhost öffnen; alternativ manuell eingeben.');
+      return;
+    }
+
+    setStatus('Kameraberechtigung wird angefordert …');
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      video.srcObject = stream;
+      await new Promise((resolve, reject) => {
+        if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
+        const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Warten auf das Kamerabild.')), 10000);
+        video.onloadedmetadata = () => {
+          clearTimeout(timer);
+          video.play().then(resolve).catch(reject);
+        };
+      });
+      await video.play();
+      scanBtn.disabled = false;
+      setStatus('Kamera bereit – Geburtsdatum in den Rahmen legen');
+    } catch (err) {
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      stream = null;
+      video.srcObject = null;
+      scanBtn.disabled = true;
+      const message = err && err.name === 'NotAllowedError'
+        ? 'Kamerazugriff verweigert. Bitte die Kameraberechtigung in den Browser-Einstellungen erlauben.'
+        : err && err.name === 'NotFoundError'
+          ? 'Keine Kamera gefunden.'
+          : (err && err.message ? err.message : 'Kamera konnte nicht gestartet werden.');
+      setStatus(message + ' Manuelle Eingabe ist weiterhin möglich.');
+    }
+  }
+
+  function captureFrame() {
+    if (!stream || !stream.getVideoTracks().some(t => t.readyState === 'live')) {
+      throw new Error('Kamera ist nicht aktiv. Bitte die Seite in einem Browser mit Kamerazugriff öffnen.');
+    }
+    if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+      throw new Error('Noch kein Kamerabild verfügbar. Bitte kurz warten und erneut scannen.');
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  function cropFrame(canvas) {
+    const videoRect = video.getBoundingClientRect();
+    const frameRect = frameEl.getBoundingClientRect();
+    const scaleX = canvas.width / videoRect.width;
+    const scaleY = canvas.height / videoRect.height;
+    let sx = Math.round((frameRect.left - videoRect.left) * scaleX);
+    let sy = Math.round((frameRect.top - videoRect.top) * scaleY);
+    let sw = Math.round(frameRect.width * scaleX);
+    let sh = Math.round(frameRect.height * scaleY);
+    sx = Math.max(0, Math.min(canvas.width - 1, sx));
+    sy = Math.max(0, Math.min(canvas.height - 1, sy));
+    sw = Math.max(1, Math.min(canvas.width - sx, sw));
+    sh = Math.max(1, Math.min(canvas.height - sy, sh));
+    const out = document.createElement('canvas');
+    out.width = Math.max(1, sw * 2);
+    out.height = Math.max(1, sh * 2);
+    out.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
+    return out;
+  }
+
+  function preprocessCanvas(canvas) {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      let gray = 0.30*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+      gray = Math.max(0, Math.min(255, (gray - 128) * 1.2 + 128));
+      d[i] = d[i+1] = d[i+2] = gray;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  function calculateAge(day, month, year) {
+    const today = new Date();
+    let age = today.getFullYear() - year;
+    if (today.getMonth() < month - 1 ||
+        (today.getMonth() === month - 1 && today.getDate() < day)) age--;
+    return age;
+  }
+
+  function normalizeYear(value) {
+    let year = Number(value);
+    if (String(value).length === 2) {
+      const currentYY = new Date().getFullYear() % 100;
+      year = year <= currentYY ? 2000 + year : 1900 + year;
+    }
+    return year;
+  }
+
+  function parseDate(dayText, monthText, yearText) {
+    const d = Number(dayText), m = Number(monthText), y = normalizeYear(yearText);
+    if (!Number.isInteger(d) || !Number.isInteger(m) || !Number.isInteger(y)) return null;
+    if (y < 1900 || y > new Date().getFullYear()) return null;
+    const date = new Date(y, m - 1, d);
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+    const age = calculateAge(d, m, y);
+    if (age < 0 || age > 120) return null;
+    return { d, m, y, age };
+  }
+
+  function displayResult(parsed, prefix = 'Geburtsdatum') {
+    if (!parsed) {
+      ageEl.textContent = '---';
+      ageEl.className = 'red';
+      dateEl.textContent = 'Kein gültiges Datum erkannt';
+      setStatus('Bitte erneut scannen oder das Datum manuell eingeben.');
+      return;
+    }
+    dateEl.textContent = `${prefix}: ${String(parsed.d).padStart(2,'0')}.${String(parsed.m).padStart(2,'0')}.${parsed.y}`;
+    ageEl.textContent = `${parsed.age} Jahre`;
+    ageEl.className = parsed.age >= 18 ? 'green' : (parsed.age >= 16 ? 'yellow' : 'red');
+    setStatus('Ergebnis bitte mit dem Originaldokument vergleichen');
+  }
+
+  function findDate(text) {
+    const normalized = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[Ss]/g, '5');
+    const matches = [...normalized.matchAll(/(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{2,4})/g)];
+    for (const m of matches) {
+      const parsed = parseDate(m[1], m[2], m[3]);
+      if (parsed) return parsed;
+    }
+    return null;
+  }
+
+  async function performOCR(canvas) {
+    preprocessCanvas(canvas);
+    if (!window.Tesseract) throw new Error('Texterkennung nicht geladen. Internetverbindung prüfen oder Datum manuell eingeben.');
+    const { data: { text } } = await Tesseract.recognize(canvas, 'deu', {
+      tessedit_char_whitelist: '0123456789./- ',
+      preserve_interword_spaces: '1'
+    });
+    return findDate(text);
+  }
+
+  async function scan() {
+    if (busy) return;
+    busy = true;
+    scanning = true;
+    scanBtn.disabled = true;
+    try {
+      setStatus('Bild wird aufgenommen …');
+      const cropped = cropFrame(captureFrame());
+      setStatus('Geburtsdatum wird gelesen …');
+      const parsed = await performOCR(cropped);
+      displayResult(parsed);
+    } catch (err) {
+      setStatus((err && err.message ? err.message : 'Scan fehlgeschlagen') + ' Manuelle Eingabe möglich.');
+    } finally {
+      busy = false;
+      scanning = false;
+      scanBtn.disabled = !(stream && stream.getVideoTracks().some(t => t.readyState === 'live'));
+    }
+  }
+
+  function manualEntry() {
+    const input = prompt('Geburtsdatum eingeben (TT.MM.JJJJ):');
+    if (!input) return;
+    const cleaned = input.trim().replace(/\s+/g, '');
+    let match = cleaned.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+    if (!match) {
+      const digits = cleaned.replace(/\D/g, '');
+      if (digits.length === 8) match = [digits, digits.slice(0,2), digits.slice(2,4), digits.slice(4)];
+      else if (digits.length === 6) match = [digits, digits.slice(0,2), digits.slice(2,4), digits.slice(4)];
+    }
+    if (!match) {
+      setStatus('Format nicht erkannt. Bitte TT.MM.JJJJ eingeben.');
+      return;
+    }
+    displayResult(parseDate(match[1], match[2], match[3]), 'Manuell');
+  }
+
+  scanBtn.addEventListener('click', scan);
+  manualBtn.addEventListener('click', manualEntry);
+
+  // Kamerastart beim Laden wie in der ursprünglichen Version versuchen.
+  // Falls der Browser keine Berechtigung erteilt, bleibt die manuelle Eingabe verfügbar.
+  if (document.readyState === 'complete') startCamera();
+  else window.addEventListener('load', startCamera, { once: true });
+})();
+</script>
+</body>
+</html>
